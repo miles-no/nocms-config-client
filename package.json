@@ -1,0 +1,29 @@
+{
+  "name": "nocms-config-client",
+  "version": "1.0.0",
+  "description": "Logger package for NoCMS services",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:nocms/nocms-config-client.git"
+  },
+  "author": "Thomas Thorbjørnsen",
+  "license": "ISC",
+  "dependencies": {
+    "co": "^4.6.0",
+    "cryptex": "^1.0.0",
+    "superagent": "^2.2.0",
+    "superagent-retry": "^0.6.0"
+  },
+  "devDependencies": {
+    "tape": "^4.6.0",
+    "eslint": "^2.9.0",
+    "eslint-config-airbnb": "^8.0.0",
+    "eslint-plugin-import": "^1.6.1",
+    "eslint-plugin-react": "^5.1.1",
+    "eslint-plugin-jsx-a11y": "^1.0.4"
+  }
+}
