@@ -1,11 +1,13 @@
 const co = require('co');
 const request = require('superagent');
 const cryptex = require('cryptex');
+const defaultCryptexOptions = require('./cryptex.json');
 
 const retryIntervall = 2000; // In ms
 const defaultRefreshIntervall = 600000; // In ms
 const maxRetries = 100;
 const defaultHost = process.env.CONFIG_API_HOST || 'http://config_api:3000';
+
 let intervalHandle;
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
@@ -33,15 +35,16 @@ const handleResponse = function handleResponse(response) {
   return Promise.resolve({ config, encrypted });
 };
 
-const decryptSecrets = co.wrap(function* decryptSecrets({ config, encrypted }) {
+const decryptSecrets = co.wrap(function* decryptSecrets({ config, encrypted }, cryptexOptions) {
+  const crypt = new cryptex.Cryptex(cryptexOptions);
   for (const key of encrypted) {
-    config[key] = yield cryptex.decrypt(config[key]);
+    config[key] = yield crypt.decrypt(config[key]);
   }
 
   return config;
 });
 
-const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost }) {
+const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost, cryptexOptions }) {
   let retries = maxRetries;
   let response = null;
 
@@ -56,7 +59,7 @@ const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configA
   }
 
   const data = yield handleResponse(response);
-  let config = yield decryptSecrets(data);
+  let config = yield decryptSecrets(data, cryptexOptions);
 
   if (typeof configAdapter === 'function') {
     config = configAdapter(config);
@@ -71,12 +74,12 @@ const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configA
 });
 
 module.exports = {
-  getConfig: ({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost, refreshIntervall = defaultRefreshIntervall }) => {
+  getConfig: ({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost, refreshIntervall = defaultRefreshIntervall, cryptexOptions = defaultCryptexOptions }) => {
     intervalHandle = setInterval(() => {
-      getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost });
+      getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost, cryptexOptions });
     }, refreshIntervall);
 
-    return getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost });
+    return getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost, cryptexOptions });
   },
   stopRefresh: () => {
     if (intervalHandle) {
