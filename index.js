@@ -1,24 +1,27 @@
 const co = require('co');
 const request = require('superagent');
+const cryptex = require('cryptex');
 
 let cachedConfig = null;
 const retryIntervall = 2000;
 const maxRetries = 10;
-const defaultHost = "http://config_api:3000"
+const defaultHost = 'http://config_api:3000';
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
   return new Promise((resolve) => {
-    setTimeout(() => {
-      request
-        .get(configApiHost)
-        .query({ client: clientName })
-        .end((err, res) => {
-          if (err) {
-            console.warn(`Couldn't connect to config API. Error: ${err.message}`);
-          }
-          resolve(err ? null : res);
-        });
-    }, retryIntervall);
+    request
+      .get(configApiHost)
+      .query({ client: clientName })
+      .end((err, res) => {
+        if (err) {
+          console.warn(`Couldn't connect to config API. Error: ${err.message}`);
+          setTimeout(() => {
+            resolve(null);
+          }, retryIntervall);
+          return;
+        }
+        resolve(res);
+      });
   });
 };
 
@@ -29,15 +32,13 @@ const handleResponse = function handleResponse(response) {
   return Promise.resolve({ config, encrypted });
 };
 
-const decryptSecrets = function decryptSecrets({ config, encrypted }) {
-  // TODO
-
-  for (var key of encrypted) {
-    console.log(`Encrypting ${key}`);
+const decryptSecrets = co.wrap(function* decryptSecrets({ config, encrypted }) {
+  for (const key of encrypted) {
+    config[key] = yield cryptex.decrypt(config[key]);
   }
 
-  return Promise.resolve(config);
-};
+  return config;
+});
 
 const getConfig = co.wrap(function* getConfig(clientName, configApiHost = defaultHost) {
   if (cachedConfig !== null) {
@@ -48,7 +49,7 @@ const getConfig = co.wrap(function* getConfig(clientName, configApiHost = defaul
   let response = null;
 
   while (response == null && retries-- > 0) {
-    console.info(`Connecting to config API... (${retries} attempts left)`);
+    console.info(`Connecting to ${configApiHost}... (${retries} attempts left)`);
     response = yield loadConfig(configApiHost, clientName);
   }
 

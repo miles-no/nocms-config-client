@@ -1,0 +1,13 @@
+{
+  "default": {
+    "keySource": "plaintext",
+    "keySourceEncoding": "base64",
+    "keySourceOpts": {
+      
+    },
+    "algorithm": "aes256",
+    "secrets": {
+      "password": "XrgkbB8V2lDLKt8S06tBFDNhmDmftXh2dO1Pzva5SOI="
+    }
+  }
+}
