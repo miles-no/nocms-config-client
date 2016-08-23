@@ -2,10 +2,11 @@ const co = require('co');
 const request = require('superagent');
 const cryptex = require('cryptex');
 
-let cachedConfig = null;
-const retryIntervall = 2000;
+const retryIntervall = 2000; // In ms
+const defaultRefreshIntervall = 600000; // In ms
 const maxRetries = 10;
 const defaultHost = 'http://config_api:3000';
+let intervalHandle;
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
   return new Promise((resolve) => {
@@ -40,11 +41,7 @@ const decryptSecrets = co.wrap(function* decryptSecrets({ config, encrypted }) {
   return config;
 });
 
-const getConfig = co.wrap(function* getConfig(clientName, configApiHost = defaultHost) {
-  if (cachedConfig !== null) {
-    return cachedConfig;
-  }
-
+const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost }) {
   let retries = maxRetries;
   let response = null;
 
@@ -59,11 +56,34 @@ const getConfig = co.wrap(function* getConfig(clientName, configApiHost = defaul
   }
 
   const data = yield handleResponse(response);
-  const config = yield decryptSecrets(data);
+  let config = yield decryptSecrets(data);
 
-  cachedConfig = config;
+  if (typeof configAdapter === 'function') {
+    config = configAdapter(config);
+  }
 
-  return config;
+  console.info('Updating config');
+  Object.assign(localConfig, config);
+
+  if (typeof onConfigRefresh === 'function') {
+    onConfigRefresh(localConfig);
+  }
 });
 
-module.exports = getConfig;
+module.exports = {
+  getConfig: ({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost, refreshIntervall = defaultRefreshIntervall }) => {
+    intervalHandle = setInterval(() => {
+      getConfig({ clientName, localConfig, configAdapter, configApiHost });
+    }, refreshIntervall);
+
+    return getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost });
+  },
+
+  stopRefresh: () => {
+    if (intervalHandle) {
+      clearInterval(intervalHandle);
+
+      intervalHandle = null;
+    }
+  }
+};
