@@ -4,8 +4,8 @@ const cryptex = require('cryptex');
 
 const retryIntervall = 2000; // In ms
 const defaultRefreshIntervall = 600000; // In ms
-const maxRetries = 10;
-const defaultHost = 'http://config_api:3000';
+const maxRetries = 100;
+const defaultHost = process.env.CONFIG_API_HOST || 'http://config_api:3000';
 let intervalHandle;
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
@@ -73,17 +73,16 @@ const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configA
 module.exports = {
   getConfig: ({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost, refreshIntervall = defaultRefreshIntervall }) => {
     intervalHandle = setInterval(() => {
-      getConfig({ clientName, localConfig, configAdapter, configApiHost });
+      getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost });
     }, refreshIntervall);
 
     return getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost });
   },
-
   stopRefresh: () => {
     if (intervalHandle) {
       clearInterval(intervalHandle);
 
       intervalHandle = null;
     }
-  }
+  },
 };
