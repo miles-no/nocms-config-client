@@ -37,7 +37,7 @@ const handleResponse = function handleResponse(response) {
 };
 
 const decryptSecrets = co.wrap(function* decryptSecrets({ config, encrypted }, cryptexConfig) {
-  const crypt = new cryptex.Cryptex({config: cryptexConfig});
+  const crypt = new cryptex.Cryptex({ config: cryptexConfig });
   for (const key of encrypted) {
     config[key] = yield crypt.decrypt(config[key]);
   }
