@@ -14,7 +14,6 @@
   "license": "ISC",
   "dependencies": {
     "co": "^4.6.0",
-    "cryptex": "^1.0.0",
     "superagent": "^2.2.0"
   },
   "devDependencies": {

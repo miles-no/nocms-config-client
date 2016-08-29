@@ -1,7 +1,0 @@
-{
-  "default": {
-    "keySource": "plaintext",
-    "keySourceEncoding": "base64",
-    "algorithm": "aes256"
-  }
-}

@@ -1,15 +1,16 @@
 const co = require('co');
 const request = require('superagent');
-const cryptex = require('cryptex');
-const env = process.env.NODE_ENV || 'default';
-const defaultCryptexConfig = require('./cryptex.json')[env];
+const AES256 = require('./crypto/algorithms/aes256');
+const crypto = new AES256();
+const cryptoKey = process.env.CRYPTEX_KEYSOURCE_PLAINTEXT_KEY;
 
 const retryIntervall = 2000; // In ms
-const defaultRefreshIntervall = 600000; // In ms
 const maxRetries = 100;
+const defaultRefreshInterval = 600000; // In ms
 const defaultHost = process.env.CONFIG_API_HOST || 'http://config_api:3000';
 
 let intervalHandle;
+let configCache = null;
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
   return new Promise((resolve) => {
@@ -30,22 +31,22 @@ const loadConfig = function loadConfig(configApiHost, clientName) {
 };
 
 const handleResponse = function handleResponse(response) {
-  // TODO
   const { config, encrypted } = response.body;
-
-  return Promise.resolve({ config, encrypted });
+  return { config, encrypted };
 };
 
-const decryptSecrets = co.wrap(function* decryptSecrets({ config, encrypted }, cryptexConfig) {
-  const crypt = new cryptex.Cryptex({ config: cryptexConfig });
+const decryptSecrets = function decryptSecrets({ config, encrypted }) {
   for (const key of encrypted) {
-    config[key] = yield crypt.decrypt(config[key]);
+    const objPath = key.split('.');
+    const obj = objPath.reduce((o, i) => (typeof o[i] === 'string' ? o : o[i]), config);
+
+    obj[objPath[objPath.length - 1]] = crypto.decrypt(cryptoKey, obj[objPath[objPath.length - 1]]);
   }
 
   return config;
-});
+};
 
-const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost, cryptexConfig }) {
+const getConfig = co.wrap(function* getConfig(clientName, configApiHost) {
   let retries = maxRetries;
   let response = null;
 
@@ -59,30 +60,31 @@ const getConfig = co.wrap(function* getConfig({ clientName, localConfig, configA
     throw Error('Could not connect to config API');
   }
 
-  const data = yield handleResponse(response);
-  let config = yield decryptSecrets(data, cryptexConfig);
+  const data = handleResponse(response);
 
-  if (typeof configAdapter === 'function') {
-    config = configAdapter(config);
-  }
-
-  console.info('Updating config');
-  Object.assign(localConfig, config);
-
-  if (typeof onConfigRefresh === 'function') {
-    onConfigRefresh(localConfig);
-  }
+  return decryptSecrets(data);
 });
 
 module.exports = {
-  getConfig: ({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost = defaultHost,
-    refreshIntervall = defaultRefreshIntervall, cryptexConfig = defaultCryptexConfig }) => {
+  init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval) {
     intervalHandle = setInterval(() => {
-      getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost, cryptexConfig });
-    }, refreshIntervall);
+      configCache = getConfig(clientName, configApiHost);
+    }, refreshInterval);
 
-    return getConfig({ clientName, localConfig, configAdapter, onConfigRefresh, configApiHost, cryptexConfig });
+    return getConfig(clientName, configApiHost).then((config) => {
+      configCache = config;
+
+      return configCache;
+    });
   },
+  get: (configKey) => {
+    if (configCache === null) {
+      throw new Error('You must run init before getting config values');
+    }
+
+    return configCache[configKey];
+  },
+
   stopRefresh: () => {
     if (intervalHandle) {
       clearInterval(intervalHandle);

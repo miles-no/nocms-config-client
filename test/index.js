@@ -1,28 +1,13 @@
 const test = require('tape');
 const sut = require('../');
 
-const config = {
-  configApiHost: 'http://dev:3222/',
-};
-
-const adapter = function adapter(config) {
-  return {
-    value: config.TEST_VALUE,
-    pass: config.TEST_PASSWORD,
-    pass2: config.TEST_PASSWORD2,
-  };
-};
+const configApiHost = 'http://dev:3222/';
 
 test('Should get config from config api', (t) => {
   t.plan(1);
   const localConfig = {};
-  sut.getConfig({
-    clientName: 'test',
-    configAdapter: adapter,
-    localConfig: localConfig,
-    configApiHost: config.configApiHost,
-  }).then(() => {
-    console.log('conf', localConfig);
+  sut.init('i18n_api', configApiHost).then((config) => {
+    console.log('conf', config);
     sut.stopRefresh();
     t.pass('Config loaded');
   }, (err) => {
