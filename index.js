@@ -30,12 +30,7 @@ const loadConfig = function loadConfig(configApiHost, clientName) {
   });
 };
 
-const handleResponse = function handleResponse(response) {
-  const { config, encrypted } = response.body;
-  return { config, encrypted };
-};
-
-const decryptSecrets = function decryptSecrets({ config, encrypted }) {
+const decryptSecrets = function decryptSecrets(config, encrypted) {
   for (const key of encrypted) {
     const objPath = key.split('.');
     const obj = objPath.reduce((o, i) => (typeof o[i] === 'string' ? o : o[i]), config);
@@ -60,26 +55,37 @@ const getConfig = co.wrap(function* getConfig(clientName, configApiHost) {
     throw Error('Could not connect to config API');
   }
 
-  const data = handleResponse(response);
+  const { config, encrypted } = response.body;
 
-  return decryptSecrets(data);
+  return decryptSecrets(config, encrypted);
 });
+
+const updateConfigCache = function updateConfigCache(clientName, configApiHost) {
+  return getConfig(clientName, configApiHost).then((config) => {
+    configCache = config;
+
+    return configCache;
+  });
+};
 
 module.exports = {
   init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval) {
-    intervalHandle = setInterval(() => {
-      configCache = getConfig(clientName, configApiHost);
-    }, refreshInterval);
+    return updateConfigCache(clientName, configApiHost).then((config) => {
+      intervalHandle = setInterval(() => updateConfigCache, refreshInterval);
 
-    return getConfig(clientName, configApiHost).then((config) => {
-      configCache = config;
-
-      return configCache;
+      return config;
+    }, (err) => {
+      console.log('Error getting config', err);
+      throw new Error(err);
     });
   },
   get: (configKey) => {
-    if (configCache === null) {
+    if (!configCache) {
       throw new Error('You must run init before getting config values');
+    }
+
+    if (!configKey) {
+      return configCache;
     }
 
     return configCache[configKey];
