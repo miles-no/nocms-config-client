@@ -13,12 +13,16 @@ let intervalHandle;
 let configCache = null;
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     request
       .get(configApiHost)
       .query({ client: clientName })
       .end((err, res) => {
         if (err) {
+          if (err.status === 401) {
+            reject(err.response.text);
+            return;
+          }
           console.warn(`Couldn't connect to config API. Error: ${err.message}`);
           setTimeout(() => {
             resolve(null);
@@ -72,7 +76,7 @@ module.exports = {
   init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval) {
     return updateConfigCache(clientName, configApiHost).then((config) => {
       intervalHandle = setInterval(() => updateConfigCache, refreshInterval);
-
+      console.info(`${clientName} config loaded from ${configApiHost})`);
       return config;
     }, (err) => {
       console.log('Error getting config', err);
