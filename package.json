@@ -1,6 +1,6 @@
 {
   "name": "nocms-config-client",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "description": "Logger package for NoCMS services",
   "main": "index.js",
   "scripts": {
