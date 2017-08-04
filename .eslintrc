@@ -1,9 +1,6 @@
 {
-  "extends": "airbnb",
-  "rules": {
-    "max-len": ["error", 200]
-  },
-  "plugins": [
-    "react"
+  "parser": "babel-eslint",
+  "extends": [
+    "webteam"
   ]
 }
