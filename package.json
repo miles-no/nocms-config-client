@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@bitbucket.org:nocms/nocms-config-client.git"
+    "url": "https://github.com/miles-no/nocms-config-client"
   },
   "author": "Thomas Thorbjørnsen",
   "license": "ISC",
