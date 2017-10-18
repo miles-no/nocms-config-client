@@ -1,4 +1,5 @@
 const AES256 = require('./crypto/algorithms/aes256');
+
 const operation = process.argv[2];
 
 const key = process.argv.length === 5 ? process.argv[3] : process.env.CRYPTEX_KEYSOURCE_PLAINTEXT_KEY;

@@ -1,6 +1,7 @@
 const co = require('co');
 const request = require('superagent');
 const AES256 = require('./crypto/algorithms/aes256');
+
 const crypto = new AES256();
 const cryptoKey = process.env.CRYPTEX_KEYSOURCE_PLAINTEXT_KEY;
 
@@ -37,7 +38,7 @@ const loadConfig = function loadConfig(configApiHost, clientName) {
 const decryptSecrets = function decryptSecrets(config, encrypted) {
   for (const key of encrypted) {
     const objPath = key.split('.');
-    const obj = objPath.reduce((o, i) => (typeof o[i] === 'string' ? o : o[i]), config);
+    const obj = objPath.reduce((o, i) => { return (typeof o[i] === 'string' ? o : o[i]); }, config);
 
     obj[objPath[objPath.length - 1]] = crypto.decrypt(cryptoKey, obj[objPath[objPath.length - 1]]);
   }
@@ -48,7 +49,7 @@ const decryptSecrets = function decryptSecrets(config, encrypted) {
 const getConfig = co.wrap(function* getConfig(clientName, configApiHost) {
   let retries = maxRetries;
   let response = null;
-
+  /* eslint no-plusplus: off */
   while (response == null && retries-- > 0) {
     console.info(`Connecting to ${configApiHost}... (${retries} attempts left)`);
     response = yield loadConfig(configApiHost, clientName);
@@ -71,7 +72,7 @@ const updateConfigCache = function updateConfigCache(clientName, configApiHost) 
     return configCache;
   });
 };
-
+/* eslint arrow-body-style: off */
 module.exports = {
   init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval) {
     return updateConfigCache(clientName, configApiHost).then((config) => {
