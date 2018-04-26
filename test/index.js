@@ -30,7 +30,6 @@ test('Should get config from config api', (t) => {
     });
 });
 
-
 test('teardown', (t) => {
   tearDown();
   t.pass();

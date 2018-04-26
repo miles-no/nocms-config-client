@@ -16,6 +16,7 @@ let intervalHandle;
 let configCache = null;
 
 const loadLocalConfig = (path, cb) => {
+  /* eslint-disable consistent-return */
   fs.exists(path, (exists) => {
     if (!exists) {
       const errorMessage = `Couldn't find local config file at path ${path}.`;
@@ -36,7 +37,7 @@ const loadLocalConfig = (path, cb) => {
         return cb(e, null);
       }
       console.info('Succesfully loaded local config', localConfig);
-      cb(null, localConfig);
+      return cb(null, localConfig);
     });
   });
 };
