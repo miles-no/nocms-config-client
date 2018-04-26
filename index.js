@@ -1,6 +1,7 @@
 const co = require('co');
 const request = require('superagent');
 const AES256 = require('./crypto/algorithms/aes256');
+const fs = require('fs');
 
 const crypto = new AES256();
 const cryptoKey = process.env.CRYPTEX_KEYSOURCE_PLAINTEXT_KEY;
@@ -9,9 +10,36 @@ const retryIntervall = 2000; // In ms
 const maxRetries = 100;
 const defaultRefreshInterval = 600000; // In ms
 const defaultHost = process.env.CONFIG_API_HOST || 'http://config_api:3000';
+const localConfigFile = process.env.LOCAL_CONFIG_FILE;
 
 let intervalHandle;
 let configCache = null;
+
+const loadLocalConfig = (path, cb) => {
+  fs.exists(path, (exists) => {
+    if (!exists) {
+      const errorMessage = `Couldn't find local config file at path ${path}.`;
+      console.warn(errorMessage);
+      return cb({ message: errorMessage }, null);
+    }
+    fs.readFile(path, (err, file) => {
+      if (err) {
+        console.warn(`Couldn't read local config file at path ${path}. Error: ${err.message}`);
+        return cb(err, null);
+      }
+      let localConfig = {};
+
+      try {
+        localConfig = JSON.parse(file);
+      } catch (e) {
+        console.warn(`An error occured when trying to parse config file. Error: ${e.message}.`);
+        return cb(e, null);
+      }
+      console.info('Succesfully loaded local config', localConfig);
+      cb(null, localConfig);
+    });
+  });
+};
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
   return new Promise((resolve, reject) => {
@@ -66,6 +94,21 @@ const getConfig = co.wrap(function* getConfig(clientName, configApiHost) {
 });
 
 const updateConfigCache = function updateConfigCache(clientName, configApiHost) {
+  if (localConfigFile) {
+    return new Promise((resolve, reject) => {
+      console.info('Using local config. ');
+      loadLocalConfig(localConfigFile, (err, localConfig) => {
+        if (!err) {
+          configCache = localConfig;
+          resolve(configCache);
+          return;
+        }
+        reject(err);
+        console.info(`Error: ${err}. Using remote config instead.`);
+      });
+    });
+  }
+
   return getConfig(clientName, configApiHost).then((config) => {
     configCache = config;
 
@@ -79,10 +122,11 @@ module.exports = {
       intervalHandle = setInterval(() => updateConfigCache, refreshInterval);
       console.info(`${clientName} config loaded from ${configApiHost})`);
       return config;
-    }, (err) => {
-      console.log('Error getting config', err);
-      throw new Error(err);
-    });
+    })
+      .catch((err) => {
+        console.log('Error getting config', err);
+        throw new Error(err);
+      });
   },
   get: (configKey) => {
     if (!configCache) {
