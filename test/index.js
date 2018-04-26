@@ -10,7 +10,7 @@ const tearDown = () => {
 test('should return local config if LOCAL_CONFIG_FILE env variable is set', (t) => {
   process.env.LOCAL_CONFIG_FILE = './config.json';
   sut.init('page', configApiHost)
-    .then((config) => {
+    .then(() => {
       t.pass(`loaded local config file at ${process.env.LOCAL_CONFIG_FILE}`);
       t.end();
     }).catch((err) => {
@@ -19,7 +19,7 @@ test('should return local config if LOCAL_CONFIG_FILE env variable is set', (t) 
 });
 
 test('Should get config from config api', (t) => {
-  sut.init('i18n_api', configApiHost).then((config) => {
+  sut.init('i18n_api', configApiHost).then(() => {
     t.pass('Config loaded');
     t.end();
   })
