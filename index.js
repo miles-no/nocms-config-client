@@ -20,12 +20,12 @@ const loadLocalConfig = (path, cb) => {
   fs.exists(path, (exists) => {
     if (!exists) {
       const errorMessage = `Couldn't find local config file at path ${path}.`;
-      console.warn(errorMessage);
+      // console.warn(errorMessage);
       return cb({ message: errorMessage }, null);
     }
     fs.readFile(path, (err, file) => {
       if (err) {
-        console.warn(`Couldn't read local config file at path ${path}. Error: ${err.message}`);
+        // console.warn(`Couldn't read local config file at path ${path}. Error: ${err.message}`);
         return cb(err, null);
       }
       let localConfig = {};
@@ -33,10 +33,10 @@ const loadLocalConfig = (path, cb) => {
       try {
         localConfig = JSON.parse(file);
       } catch (e) {
-        console.warn(`An error occured when trying to parse config file. Error: ${e.message}.`);
+        // console.warn(`An error occured when trying to parse config file. Error: ${e.message}.`);
         return cb(e, null);
       }
-      console.info('Succesfully loaded local config', localConfig);
+      // console.info('Succesfully loaded local config', localConfig);
       return cb(null, localConfig);
     });
   });
@@ -53,7 +53,7 @@ const loadConfig = function loadConfig(configApiHost, clientName) {
             reject(err.response.text);
             return;
           }
-          console.warn(`Couldn't connect to config API. Error: ${err.message}`);
+          // console.warn(`Couldn't connect to config API. Error: ${err.message}`);
           setTimeout(() => {
             resolve(null);
           }, retryIntervall);
@@ -80,12 +80,12 @@ const getConfig = co.wrap(function* getConfig(clientName, configApiHost) {
   let response = null;
   /* eslint no-plusplus: off */
   while (response == null && retries-- > 0) {
-    console.info(`Connecting to ${configApiHost}... (${retries} attempts left)`);
+    // console.info(`Connecting to ${configApiHost}... (${retries} attempts left)`);
     response = yield loadConfig(configApiHost, clientName);
   }
 
   if (response == null) {
-    console.error(`Couldn't connect to config API after ${maxRetries} attempts`);
+    // console.error(`Couldn't connect to config API after ${maxRetries} attempts`);
     throw Error('Could not connect to config API');
   }
 
@@ -97,7 +97,7 @@ const getConfig = co.wrap(function* getConfig(clientName, configApiHost) {
 const updateConfigCache = function updateConfigCache(clientName, configApiHost) {
   if (localConfigFile) {
     return new Promise((resolve, reject) => {
-      console.info('Using local config. ');
+      // console.info('Using local config. ');
       loadLocalConfig(localConfigFile, (err, localConfig) => {
         if (!err) {
           configCache = localConfig;
@@ -105,7 +105,7 @@ const updateConfigCache = function updateConfigCache(clientName, configApiHost) 
           return;
         }
         reject(err);
-        console.info(`Error: ${err}. Using remote config instead.`);
+        // console.info(`Error: ${err}. Using remote config instead.`);
       });
     });
   }
@@ -121,11 +121,11 @@ module.exports = {
   init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval) {
     return updateConfigCache(clientName, configApiHost).then((config) => {
       intervalHandle = setInterval(() => updateConfigCache, refreshInterval);
-      console.info(`${clientName} config loaded from ${configApiHost})`);
+      // console.info(`${clientName} config loaded from ${configApiHost})`);
       return config;
     })
       .catch((err) => {
-        console.log('Error getting config', err);
+        // console.log('Error getting config', err);
         throw new Error(err);
       });
   },
@@ -139,6 +139,18 @@ module.exports = {
     }
 
     return configCache[configKey];
+  },
+  set: (configKey, configValue) => {
+    if (typeof configValue === 'undefined' && typeof configKey === 'object') {
+      configCache = configKey;
+      return;
+    }
+
+    if (!configCache) {
+      configCache = {};
+    }
+
+    configCache[configKey] = configValue;
   },
 
   stopRefresh: () => {
