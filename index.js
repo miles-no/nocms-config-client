@@ -9,7 +9,7 @@ const cryptoKey = process.env.CRYPTEX_KEYSOURCE_PLAINTEXT_KEY;
 const retryIntervall = 2000; // In ms
 const maxRetries = 100;
 const defaultRefreshInterval = 600000; // In ms
-const defaultHost = process.env.CONFIG_API_HOST || 'http://config_api:3000';
+const defaultHost = 'http://config-api:3000';
 const localConfigFile = process.env.LOCAL_CONFIG_FILE;
 
 let intervalHandle;
