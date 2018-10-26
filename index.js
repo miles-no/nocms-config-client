@@ -135,7 +135,10 @@ module.exports = {
       return config;
     })
       .catch((err) => {
-        // console.log('Error getting config', err);
+        if (verboseLogging) {
+          // eslint-disable-next-line no-console
+          console.log('Error getting config', err);
+        }
         throw new Error(err);
       });
   },
