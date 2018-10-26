@@ -8,17 +8,20 @@ const operations = {
   encrypt: (secret) => {
     const algo = new AES256();
 
+    // eslint-disable-next-line no-console
     console.log(algo.encrypt(key, secret));
   },
 
   decrypt: (secret) => {
     const algo = new AES256();
 
+    // eslint-disable-next-line no-console
     console.log(algo.decrypt(key, secret));
   },
 };
 
 if (!operations[operation]) {
+  // eslint-disable-next-line no-console
   console.log('Missing or invalid argument. Should be one of [decrypt, encrypt]');
   process.exit(9);
 }

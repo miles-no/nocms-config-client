@@ -45,7 +45,8 @@ const loadLocalConfig = (path, cb) => {
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
   return new Promise((resolve, reject) => {
-    if (verboseLogging){
+    if (verboseLogging) {
+      // eslint-disable-next-line no-console
       console.log(`loadconfig from ${configApiHost} for client ${clientName}.`);
     }
     request
@@ -53,8 +54,9 @@ const loadConfig = function loadConfig(configApiHost, clientName) {
       .query({ client: clientName })
       .end((err, res) => {
         if (err) {
-          if (verboseLogging){
-            console.log(`Error loading config`, err);
+          if (verboseLogging) {
+            // eslint-disable-next-line no-console
+            console.log('Error loading config', err);
           }
           if (err.status === 401) {
             reject(err.response.text);
