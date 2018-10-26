@@ -11,6 +11,7 @@ const maxRetries = 100;
 const defaultRefreshInterval = 600000; // In ms
 const defaultHost = process.env.CONFIG_API_HOST || 'http://config-api:3000';
 const localConfigFile = process.env.LOCAL_CONFIG_FILE;
+let verboseLogging = false;
 
 let intervalHandle;
 let configCache = null;
@@ -44,11 +45,17 @@ const loadLocalConfig = (path, cb) => {
 
 const loadConfig = function loadConfig(configApiHost, clientName) {
   return new Promise((resolve, reject) => {
+    if (verboseLogging){
+      console.log(`loadconfig from ${configApiHost} for client ${clientName}.`);
+    }
     request
       .get(configApiHost)
       .query({ client: clientName })
       .end((err, res) => {
         if (err) {
+          if (verboseLogging){
+            console.log(`Error loading config`, err);
+          }
           if (err.status === 401) {
             reject(err.response.text);
             return;
@@ -118,7 +125,8 @@ const updateConfigCache = function updateConfigCache(clientName, configApiHost) 
 };
 /* eslint arrow-body-style: off */
 module.exports = {
-  init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval) {
+  init: function init(clientName, configApiHost = defaultHost, refreshInterval = defaultRefreshInterval, verbose = false) {
+    verboseLogging = verbose;
     return updateConfigCache(clientName, configApiHost).then((config) => {
       intervalHandle = setInterval(() => updateConfigCache, refreshInterval);
       // console.info(`${clientName} config loaded from ${configApiHost})`);
