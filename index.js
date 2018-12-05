@@ -1,7 +1,6 @@
 const co = require('co');
 const request = require('superagent');
 const AES256 = require('./crypto/algorithms/aes256');
-const fs = require('fs');
 
 const crypto = new AES256();
 const cryptoKey = process.env.CRYPTEX_KEYSOURCE_PLAINTEXT_KEY;
@@ -18,6 +17,9 @@ let configCache = null;
 
 const loadLocalConfig = (path, cb) => {
   /* eslint-disable consistent-return */
+  /* eslint-disable global-require */
+  const fs = require('fs');
+
   fs.exists(path, (exists) => {
     if (!exists) {
       const errorMessage = `Couldn't find local config file at path ${path}.`;
